@@ -1,0 +1,25 @@
+# Python and Streamlit runtime files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.env
+.streamlit/secrets.toml
+
+# Generated model features, training output, and local environments
+cache/
+models/
+labels/
+.venv/
+
+# Machine-specific and temporary files
+__MACOSX/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local submission/demo artefacts; share these separately if needed
+*.mp4
+Screenshot*.png
+codex-clipboard-*.png
+read.txt
