@@ -65,9 +65,4 @@ pytest -q
 
 The tests validate CSV/image integrity, ensure necklaces never appear in recommendations, and verify cache signatures change when inventory inputs change.
 
-## Suggested 1–2 minute demo
 
-1. Launch the app and introduce the local matching goal.
-2. Select one necklace and point out the three recommended earrings and explanations.
-3. Choose a visually different necklace and show that the order changes.
-4. Explain the three-component score and that every result comes from the provided inventory.
