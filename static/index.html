@@ -1,8 +1,25 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jewellos | Pair Finder</title><link rel="stylesheet" href="/assets/styles.css"></head><body>
-<main id="landing" class="shell">
-  <nav class="reveal"><a class="brand" href="/">Jewellos</a><span><a href="https://www.jewellos.com/about" target="_blank">About</a><a href="https://www.jewellos.com/contact" target="_blank">Contact</a></span></nav>
-  <section class="hero"><div class="hero-copy reveal"><p class="eyebrow">INTELLIGENT JEWELLERY MATCHING</p><h1>AI for modern jewellery retail.</h1><p>Discover harmonious earring pairings from your catalogue - guided by visual detail, overall style, and colour.</p><button class="dark" onclick="openMatcher()">Explore the matcher</button></div><img class="reveal visual-reveal" src="/images/Nck_1.jpg" alt="Gold and emerald necklace"></section>
-  <section class="intro reveal"><p class="eyebrow">DESIGNED FOR DISCOVERY</p><h2>Thoughtful pairings, made simple.</h2><p>A local prototype for helping jewellery teams find visually compatible products with confidence.</p><div class="steps"><article class="reveal delay-1"><b>01</b><h3>Choose a necklace</h3><p>Start with any necklace from the product inventory.</p></article><article class="reveal delay-2"><b>02</b><h3>See strong matches</h3><p>Review visually compatible earrings and their match signals.</p></article><article class="reveal delay-3"><b>03</b><h3>Explore the catalogue</h3><p>Browse every remaining earring in ranked order.</p></article></div></section>
-</main>
-<main id="matcher" class="shell hidden"><nav><a class="brand" href="/">Jewellos</a><span>AI Pair Finder <button class="text" onclick="openLanding()">Back to home</button></span></nav><header class="matcher-head"><p class="eyebrow">LOCAL VISUAL MATCHING</p><h1>Find the perfect earring pair.</h1><p>Choose a necklace and explore compatible earrings from the catalogue.</p></header><div class="tabs"><button class="tab active" data-tab="recommend">Recommend</button><button class="tab" data-tab="learn">Label & train</button></div><section id="recommend"><label>Select a necklace <select id="necklace-select"></select></label><div id="selected"></div><div id="loading" class="hidden">Finding visually compatible earrings...</div><h2>Top matching earrings</h2><div id="top-results" class="cards"></div><section class="more"><h2>More earrings to explore</h2><p>The rest of the catalogue is available when you want to review alternatives.</p><button id="more-button" class="outline">Show additional earrings</button><div id="more-results" class="cards hidden"></div></section></section><section id="learn" class="hidden"><h2>Teach the prototype your matching taste.</h2><p>Rate each pairing from 0 (poor) to 3 (excellent), then train a small local ranking model on your labels.</p><label>Necklace to label <select id="label-necklace"></select></label><div id="label-grid" class="cards"></div><button id="save-labels" class="dark">Save ratings</button><p id="label-status"></p><button id="train" class="outline">Train personalized ranking model</button></section></main><script src="/assets/app.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Jewellos | Pair Finder</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <main id="landing" class="shell">
+    <nav class="reveal"><a class="brand" href="/">Jewellos</a><span><a href="https://www.jewellos.com/about" target="_blank">About</a><a href="https://www.jewellos.com/contact" target="_blank">Contact</a></span></nav>
+    <section class="hero"><div class="hero-copy reveal"><p class="eyebrow">INTELLIGENT JEWELLERY MATCHING</p><h1>AI for modern jewellery retail.</h1><p>Discover harmonious earring pairings from your catalogue - guided by visual detail, overall style, and colour.</p><button class="dark" onclick="openMatcher()">Explore the matcher</button></div><img class="reveal visual-reveal" src="/images/Nck_1.jpg" alt="Gold and emerald necklace"></section>
+    <section class="intro reveal"><p class="eyebrow">DESIGNED FOR DISCOVERY</p><h2>Thoughtful pairings, made simple.</h2><p>A local prototype for helping jewellery teams find visually compatible products with confidence.</p><div class="steps"><article class="reveal delay-1"><b>01</b><h3>Choose a necklace</h3><p>Start with any necklace from the product inventory.</p></article><article class="reveal delay-2"><b>02</b><h3>See strong matches</h3><p>Review visually compatible earrings and their match signals.</p></article><article class="reveal delay-3"><b>03</b><h3>Explore the catalogue</h3><p>Browse every remaining earring in ranked order.</p></article></div></section>
+  </main>
+
+  <main id="matcher" class="shell hidden">
+    <nav><a class="brand" href="/">Jewellos</a><span>AI Pair Finder <button class="text" onclick="openLanding()">Back to home</button></span></nav>
+    <header class="matcher-head"><p class="eyebrow">LOCAL VISUAL MATCHING</p><h1>Find the perfect earring pair.</h1><p>Choose a necklace and explore compatible earrings from the catalogue.</p></header>
+    <div class="tabs"><button class="tab active" data-tab="recommend">Recommend</button><button class="tab" data-tab="learn">Label & train</button></div>
+    <section id="recommend"><label>Select a necklace <select id="necklace-select"></select></label><div id="selected"></div><div id="loading" class="hidden">Finding visually compatible earrings...</div><h2>Top matching earrings</h2><div id="top-results" class="cards"></div><section class="more"><h2>More earrings to explore</h2><p>The rest of the catalogue is available when you want to review alternatives.</p><button id="more-button" class="outline">Show additional earrings</button><div id="more-results" class="cards hidden"></div></section></section>
+    <section id="learn" class="hidden"><h2>Teach the prototype your matching taste.</h2><p>Rate each pairing from 0 (poor) to 3 (excellent), then train a small local ranking model on your labels.</p><label>Necklace to label <select id="label-necklace"></select></label><div id="label-reference" class="label-reference"></div><div id="label-grid" class="cards"></div><button id="save-labels" class="dark">Save ratings</button><p id="label-status"></p><button id="train" class="outline">Train personalized ranking model</button></section>
+  </main>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

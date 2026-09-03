@@ -122,7 +122,12 @@ class JewelleryRecommender:
         if limit < 1:
             raise ValueError("limit must be at least 1")
 
+        # The earrings do not change during normal use.
+        # So we make their image features once and save them locally.
+        # On later runs, we read those saved features instead of making them again.
         self._ensure_earring_features()
+        # The selected necklace can change on every click.
+        # So we make features for this necklace now.
         query = self._features_for_image(necklace.image_path)
         ranked: list[Recommendation] = []
         component_rows: list[tuple[Product, float, float, float]] = []
@@ -135,19 +140,29 @@ class JewelleryRecommender:
 
         learned_scores = None
         if personalized_ranker is not None:
+            # If the user has trained their own model, use it here.
+            # It looks at the same three scores.
+            # But it gives importance based on the user's saved ratings.
             learned_scores = personalized_ranker.predict(
                 np.asarray([[dino, siglip, palette] for _, dino, siglip, palette in component_rows])
             ) / 3.0
 
         for index, (earring, dino_score, siglip_score, palette_score) in enumerate(component_rows):
+            # This is the default score before personal training.
+            # DINO image detail has 60% importance.
+            # SigLIP style has 30% importance.
+            # Colour and metal matching has 10% importance.
             combined = 0.60 * dino_score + 0.30 * siglip_score + 0.10 * palette_score
             score = float(learned_scores[index]) if learned_scores is not None else float(combined)
             ranked.append(
                 Recommendation(
                     product=earring,
                     score=score,
+                    # Always show the visual reason for this match.
+                    # If training exists, mention it first but do not hide the
+                    # useful explanation about style, detail, and colours.
                     explanation=(
-                        "Ranked by your trained compatibility model, using the three visual signals below."
+                        f"Personalised using your ratings. {make_explanation(dino_score, siglip_score, palette_score)}"
                         if learned_scores is not None
                         else make_explanation(dino_score, siglip_score, palette_score)
                     ),
@@ -178,9 +193,12 @@ class JewelleryRecommender:
         }
 
     def _ensure_models(self) -> None:
-        # A partially completed first download can leave DINO initialized while
-        # SigLIP is still unavailable. Only treat model setup as complete when
-        # both encoders and both processors exist.
+        # DINOv2 and SigLIP2 are already trained image models.
+        # We download them the first time they are needed.
+        # We use them to read image features.
+        # We do not train these big models in this project.
+        # Both models must be ready before we continue.
+        # This also handles a case where one model downloaded but the other did not.
         if all(
             component is not None
             for component in (
@@ -199,6 +217,11 @@ class JewelleryRecommender:
             self._siglip_model = AutoModel.from_pretrained(SIGLIP_MODEL_ID, dtype=self.dtype).to(self.device).eval()
 
     def _features_for_image(self, image_path: Path) -> dict[str, np.ndarray]:
+        # This function reads one jewellery image.
+        # It creates three sets of numbers from that image.
+        # One is for small visual details.
+        # One is for the overall style.
+        # One is for colour and metal colours.
         self._ensure_models()
         image = Image.open(image_path).convert("RGB")
         with torch.inference_mode():
@@ -210,8 +233,8 @@ class JewelleryRecommender:
             siglip_inputs = self._siglip_processor(images=image, return_tensors="pt")
             siglip_pixels = siglip_inputs["pixel_values"].to(self.device, dtype=self.dtype)
             siglip_output = self._siglip_model.get_image_features(pixel_values=siglip_pixels)
-            # Transformers exposes SigLIP2 image features differently across
-            # its multimodal and vision-only model classes.
+            # Different versions of the library can return this result in
+            # slightly different places. These checks safely find the image data.
             if isinstance(siglip_output, torch.Tensor):
                 siglip_vector = siglip_output
             elif getattr(siglip_output, "image_embeds", None) is not None:
@@ -251,6 +274,10 @@ class JewelleryRecommender:
             except (OSError, KeyError, ValueError):
                 pass
 
+        # This happens on the first run if no saved cache exists.
+        # We make features for every allowed earring.
+        # Then we save them in the cache folder.
+        # If the CSV or earrings change, we make a fresh cache.
         features = {earring.product_id: self._features_for_image(earring.image_path) for earring in self.earrings}
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
@@ -328,7 +355,7 @@ def extract_palette_features(image: Image.Image) -> np.ndarray:
 
 
 def histogram_similarity(left: np.ndarray, right: np.ndarray) -> float:
-    # Palette vectors are non-negative and L2-normalized, so cosine similarity is in [0, 1].
+    # These colour numbers are prepared so their comparison stays between 0 and 1.
     return float(np.clip(np.dot(left, right), 0.0, 1.0))
 
 
@@ -400,7 +427,10 @@ def fit_personalized_ranker(features: np.ndarray, targets: np.ndarray, seed: int
     scale[scale < 1e-6] = 1.0
     standardized = (train_features - mean) / scale
 
-    # Ridge regression makes the small-label regime stable and fully reproducible.
+    # This is the part we train ourselves.
+    # It receives the three image-match scores and the user's 0-3 ratings.
+    # It learns which type of match the user seems to prefer.
+    # Ridge regression is a small, stable model that works well with few ratings.
     design = np.column_stack((standardized, np.ones(len(standardized))))
     regularizer = np.diag([0.15, 0.15, 0.15, 0.0])
     coefficients = np.linalg.solve(design.T @ design + regularizer, design.T @ train_targets)

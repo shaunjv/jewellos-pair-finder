@@ -11,6 +11,7 @@ cache/
 models/
 labels/
 .venv/
+.idea/
 
 # Machine-specific and temporary files
 __MACOSX/

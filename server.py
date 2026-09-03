@@ -42,6 +42,9 @@ class RatingsPayload(BaseModel):
 
 def get_recommender() -> JewelleryRecommender:
     global _recommender
+    # This creates the main matching object only once.
+    # It reads the CSV and knows all necklaces and earrings.
+    # Keeping it in memory means we do not start from zero for every click.
     if _recommender is None:
         _recommender = JewelleryRecommender(DATASET, IMAGE_DIR, CACHE_DIR)
     return _recommender
@@ -68,14 +71,22 @@ def home() -> FileResponse:
 
 @app.get("/api/products")
 def products() -> dict[str, object]:
+    # app.js calls this when the page first opens.
+    # We send the list of necklaces and earrings back to the browser.
+    # The browser uses it to fill the dropdown boxes.
     catalog = get_recommender()
     return {"necklaces": [product_payload(item) for item in catalog.necklaces], "earrings": [product_payload(item) for item in catalog.earrings]}
 
 
 @app.get("/api/recommendations/{necklace_id}")
 def recommendations(necklace_id: str) -> dict[str, object]:
+    # app.js sends the selected necklace ID here.
+    # Example URL: /api/recommendations/N01
+    # This function asks recommender.py to rank all earrings for that necklace.
     catalog = get_recommender()
     try:
+        # One model job runs at a time.
+        # This prevents two browser clicks from trying to use the GPU together.
         with _model_lock:
             ranked = catalog.recommend(necklace_id, limit=len(catalog.earrings), personalized_ranker=load_personalized_ranker(RANKER_PATH))
     except InventoryError as error:
@@ -92,6 +103,10 @@ def labels() -> dict[str, object]:
 
 @app.post("/api/labels")
 def save_labels(payload: RatingsPayload) -> dict[str, int]:
+    # The browser sends ratings from 0 to 3 here.
+    # We check that the necklace, earrings, and rating values are valid.
+    # Then we save the ratings in a local CSV file.
+    # This does not train anything yet.
     catalog = get_recommender()
     valid_necklaces = {item.product_id for item in catalog.necklaces}
     valid_earrings = {item.product_id for item in catalog.earrings}
@@ -107,6 +122,10 @@ def save_labels(payload: RatingsPayload) -> dict[str, int]:
 
 @app.post("/api/train")
 def train() -> dict[str, object]:
+    # This starts after the user clicks Train.
+    # We read all saved ratings from the CSV file.
+    # For every rating, we get its three image-match scores.
+    # Then we train a small model using those scores and ratings.
     saved = load_pair_labels(LABELS_PATH)
     if len(saved) < 12:
         raise HTTPException(status_code=400, detail=f"Add {12 - len(saved)} more ratings before training.")
@@ -121,5 +140,8 @@ def train() -> dict[str, object]:
                     targets.append(quality)
         import numpy as np
         ranker = fit_personalized_ranker(np.asarray(feature_rows), np.asarray(targets, dtype=np.float32))
+        # Save the trained model in a small JSON file.
+        # Next time the user asks for matches, this file is used.
+        # So the results can follow the user's own ratings.
         save_personalized_ranker(RANKER_PATH, ranker)
     return {"label_count": ranker.label_count, "validation_mae": ranker.validation_mae}
